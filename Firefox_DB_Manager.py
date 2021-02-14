@@ -1,8 +1,8 @@
 import sqlite3
 
-"""Handles database transactions of Firefox bookmarks database"""
+"""Handles database transactions of Firefox places.sqlite database"""
 
-""" schema for moz_bookmarks.sqlite3
+""" schema for moz_bookmarks table
 id - INT
 type - INT [this sets whether or not it is a folder (1 for link, 2 for folder)]
 fk - INT (default NULL) [this foreign key is what we need in order to link the
@@ -22,27 +22,10 @@ syncChangeCounter - INT (not null default 1)
 """ schema for moz_places
 id - INT
 url - LONGVARCHAR
+currently don't use the rest
 """
 
 class DB_Manager:
-    """Handles table updates/calls for moz_bookmarks database"""
-
-    """ Assumes table moz_bookmarks exists in places.sqlite
-    schema for places.sqlite
-    id - INT
-    type - INT
-    fk - INT (default NULL)
-    parent - INT
-    position - INT
-    title - LONGVARCHAR
-    keyword_id - INT
-    folder_type - TEXT
-    dateAdded - INT
-    lastModified - INT
-    guid - TEXT
-    syncStatus - INT (not NULL default 0)
-    syncChangeCounter - INT (not null default 1)
-    """
 
     def __init__(self, path):
         conn = sqlite3.connect(path)
@@ -51,18 +34,18 @@ class DB_Manager:
         self.url_table = "moz_places"
 
 
-    def add_bookmark(self, title, url, parent_id):
+    def add_bookmark(self, title, url, parent_id, position):
         try:
             fk = self.add_url(url)
-            self._cur.execute("INSERT INTO %s(type, fk, parent, title) VALUES(1, ?, ?, ?)" % self.bk_table, (fk, parent_id, title))
+            self._cur.execute("INSERT INTO %s VALUES(type=1, fk=?, parent=?, position=?, title=?)" % self.bk_table, (fk, parent_id, position, title))
         except sqlite3.Error as e:
             raise e
 
     # returns id of the item just added
-    def add_folder(self, title, parent_id):
+    def add_folder(self, title, parent_id, position):
         try:
 
-            self._cur.execute("INSERT INTO %s(type, parent, title) VALUES(2, ?, ?)" % self.bk_table, (parent_id, title))
+            self._cur.execute("INSERT INTO %s VALUES(type=2, parent=?, title=?, position=?)" % self.bk_table, (parent_id, title, position))
             return self._cur.lastrowid
         except sqlite3.Error as e:
             raise e
@@ -96,17 +79,6 @@ class DB_Manager:
 
     def cursor_commit(self):
         self._cur.connection.commit()
-
-    # """Cursor must be open inserts the values of name and balance into table accounts
-    # DOES NOT CLOSE CURSOR
-    # """
-    # def add_bookmark(self, fk: int, title: str, parent: int, date: int):
-    #     try:
-    #         self._cur.execute("INSERT INTO ? VALUES(id=?, title=?, parent=?, dateAdded=?)", (self.table, fk, title, parent, date))
-    #     except sqlite3.Error as e:
-    #         raise e
-
-    #def
 
 
 if __name__ == '__main__':
